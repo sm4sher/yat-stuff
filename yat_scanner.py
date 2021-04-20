@@ -26,7 +26,7 @@ class YatScanner:
             logging.info('Starting scanner task')
             self.task_scanner.start()
     
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=15)
     async def task_scanner(self):
         # first let's see if any new emojis were added to the emojis endpoint (if they're just ComingSoon we don't really care but could still be interesting)
         
