@@ -133,16 +133,23 @@ def rs_gradient(rs):
 	return "#{}{}{}".format(*map(inttohex, [red, green, blue]))
 
 def make_info_strip(emoji_id):
-	infos = get_infos(emoji_id)
-	rs = infos.get('rhythm_score')
-	avail = infos.get('availability')
+	infos = get_infos(emoji_id).get('res')
+	if not infos:
+		rs = '?'
+		rs_col = None
+		avail = '???'
+		hype = '???'
+	else:
+		rs = infos.get('rhythm_score')
+		rs_col = rs_gradient(rs)
+		avail = infos.get('availability')
+		hype = min(100, infos.get('stats')[0].get('value'))
 	avail_col = None
 	if avail == "Taken":
 		avail_col = "#CC0000"
 	elif avail == "Available":
 		avail_col = "#00FF00"
-	rs_col = rs_gradient(rs)
-	hype = min(100, infos.get('stats')[0].get('value'))
+
 	info_strip = Image.new("RGBA", (WD, 50))
 	inner_wd = round(0.9*WD)
 	margin = (WD - inner_wd) // 2

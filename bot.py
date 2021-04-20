@@ -21,7 +21,7 @@ class YatBot(Bot):
         self.scanner.start()
         logging.info('bot is ready')
 
-bot = YatBot(command_prefix='+yat')
+bot = YatBot(command_prefix=config.PREFIX)
 
 @bot.command()
 async def invite(ctx):
