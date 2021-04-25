@@ -32,7 +32,7 @@ async def invite(ctx):
 @bot.command()
 async def view(ctx, *, arg):
     """ +yatview [your yat] """
-    logging.info('view cmd in {} by {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author))
+    logging.info('view cmd in {} by {} with arg: {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author, arg))
     emo_seq = parse_string(arg)
     res, msg = check_seq(emo_seq)
     if not res:
