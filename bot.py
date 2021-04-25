@@ -41,7 +41,7 @@ async def view(ctx, *, arg):
     try:
         img = make_img(emo_seq)
     except:
-        logging.exception("Error while creting yat image")
+        logging.exception("Error while creating yat image")
         await ctx.send("{} sorry there was an error...".format(ctx.author.mention))
         return
     await ctx.send(file=File(img, filename="beautifulyat.png"))
@@ -51,6 +51,7 @@ async def view_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
         await ctx.send("{} you didn't provide a Yat to display".format(ctx.author.mention))
     else:
+        logging.exception("Error while creating yat image", error)
         await ctx.send("{} sorry there was an error....".format(ctx.author.mention))
 
 @bot.command()
