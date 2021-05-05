@@ -11,12 +11,12 @@ import logging
 class YatScanner:
     COMING_SOON = ['🧠', '✨', '🤯', '♿', '🥶']
 
-    INITIAL_LIST = get_emoji_list()
     
     def __init__(self, bot):
         self.bot = bot
         self.last_scan = None
         self.sent_notifs = []
+        self.initial_list = get_emoji_list()
     
     def is_running(self):
         return self.task_scanner.is_running()
@@ -32,9 +32,10 @@ class YatScanner:
     async def task_scanner(self):
         # first let's see if any new emojis were added to the emojis endpoint (if they're just ComingSoon we don't really care but could still be interesting)
         newlist = await self.bot.loop.run_in_executor(None, get_emoji_list)
-        if len(newlist) > len(self.INITIAL_LIST):
-            new_emos = set(newlist) - set(self.INITIAL_LIST)
+        if len(newlist) > len(self.initial_list):
+            new_emos = set(newlist) - set(self.initial_list)
             await self.alert("[ALERT] New emoji might be coming soon: " + ', '.join(new_emos))
+            self.initial_list = newlist
 
         # for each emoji in the ComingSoon list, see if it changed
         res = await self.bot.loop.run_in_executor(None, scan)

@@ -30,9 +30,10 @@ def coming_soon():
     res = []
     for i, e in enumerate(emojis):
         print(i+1, '/', len(emojis), sep='')
-        if get_infos(e+'📐📓💼🎋').get('availability') == 'ComingSoon':
+        if get_infos(e+'📐📓💼🎋').get('res').get('availability') == 'ComingSoon':
             res.append(e)
     print(res)
 
 if __name__ == "__main__":
-    coming_soon()
+    print(get_infos('🥚🐣🦆🍗'))
+    #coming_soon()
