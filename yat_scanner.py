@@ -1,5 +1,5 @@
 
-from yat_api import is_emoji_out, test
+from yat_api import is_emoji_out, test, get_emoji_list
 import config
 
 from discord.ext import tasks
@@ -9,7 +9,9 @@ from datetime import datetime
 import logging
 
 class YatScanner:
-    COMING_SOON = ['🤯', '♿', '🥶', '🧠', '✨']
+    COMING_SOON = ['🧠', '✨', '🤯', '♿', '🥶']
+
+    INITIAL_LIST = get_emoji_list()
     
     def __init__(self, bot):
         self.bot = bot
@@ -29,18 +31,22 @@ class YatScanner:
     @tasks.loop(seconds=15)
     async def task_scanner(self):
         # first let's see if any new emojis were added to the emojis endpoint (if they're just ComingSoon we don't really care but could still be interesting)
-        
+        newlist = await self.bot.loop.run_in_executor(None, get_emoji_list)
+        if len(newlist) > len(self.INITIAL_LIST):
+            new_emos = set(newlist) - set(self.INITIAL_LIST)
+            await self.alert("[ALERT] New emoji might be coming soon: " + ', '.join(new_emos))
+
         # for each emoji in the ComingSoon list, see if it changed
         res = await self.bot.loop.run_in_executor(None, scan)
         for i, r in enumerate(res):
             emo = self.COMING_SOON[i]
             if r and emo not in self.sent_notifs:
                 logging.warning('EMOJI {} IS AVAILABLE!'.format(emo))
-                await self.alert(emo)
+                await self.alert('[ALERT] It looks like the emoji {} is now available on Yat! Go check it now'.format(emo))
                 self.sent_notifs.append(emo)
         self.last_scan = datetime.now()
     
-    async def alert(self, emoji):
+    async def alert(self, msg):
         for uid in config.NEW_EMOJI_NOTIF:
             try:
                 u = await self.bot.fetch_user(uid)
@@ -48,7 +54,7 @@ class YatScanner:
                 logging.warning('Scanner alert: User not found with id {}'.format(uid)) 
                 continue       
             try:     
-                await u.send('[ALERT] It looks like the emoji {} is now available on Yat! Go check it now'.format(emoji))
+                await u.send(msg)
             except:
                 logging.exception("couldn't send notification to {}".format(u))
                 continue
