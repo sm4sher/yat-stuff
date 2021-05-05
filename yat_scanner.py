@@ -22,7 +22,9 @@ class YatScanner:
         return self.task_scanner.is_running()
     
     def start(self):
-        if True in scan():
+        if not self.initial_list:
+            logging.warning("Scanner initial list wasn't initialized correctly. Not starting task")
+        elif True in scan():
             logging.warning("One of the ComingSoon emoji is available! Are you sure that's not a mistake? Not starting task")
         else:
             logging.info('Starting scanner task')
@@ -32,7 +34,7 @@ class YatScanner:
     async def task_scanner(self):
         # first let's see if any new emojis were added to the emojis endpoint (if they're just ComingSoon we don't really care but could still be interesting)
         newlist = await self.bot.loop.run_in_executor(None, get_emoji_list)
-        if len(newlist) > len(self.initial_list):
+        if newlist and len(newlist) > len(self.initial_list):
             new_emos = set(newlist) - set(self.initial_list)
             await self.alert("[ALERT] New emoji might be coming soon: " + ', '.join(new_emos))
             self.initial_list = newlist
