@@ -95,7 +95,7 @@ async def pattern_error(ctx, error):
     else:
         await ctx.send("{} sorry there was an error....".format(ctx.author.mention))
 
-@bot.command()
+@bot.command(hidden=True)
 async def scanstatus(ctx):
     if bot.scanner.is_running():
         msg = "Scanner is curently running.\nLast scan: {}\n"
