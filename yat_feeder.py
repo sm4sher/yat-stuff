@@ -3,7 +3,7 @@ import sqlite3
 import asyncio
 from datetime import datetime
 
-from discord.ext import tasks
+import discord
 
 from yat_api import get_recent_purchases
 
@@ -25,13 +25,20 @@ class YatFeeder:
 
     def init_db(self):
         self.db = sqlite3.connect('feed.db')
-        self.db_exec("CREATE TABLE IF NOT EXISTS purch_yatss (date text, yat text, rs int)")
+        # snwoflake ids should be int? if sqlite supports 64bits int
+        self.db_exec("CREATE TABLE IF NOT EXISTS purch_yats (date text, yat text, rs int)")
         self.db_exec("CREATE TABLE IF NOT EXISTS livefeeds (created_date text, channel_id text, creator_id text, enabled int)")
 
     def load_config(self):
         cur = self.db_exec("SELECT channel_id FROM livefeeds WHERE enabled=1")
         lines = cur.fetchall()
-        self.channels = {self.bot.get_channel(int(line[0])) for line in lines}
+        self.channels = set()
+        for line in lines:
+            chan = self.bot.get_channel(int(line[0]))
+            if chan is None:
+                self.db_exec("UPDATE livefeeds SET enabled=0 WHERE channel_id=?", (line[0],))
+            else:
+                self.channels.add(chan)
 
         cur = self.db_exec("SELECT yat FROM purch_yats")
         self.processed_list = {line[0] for line in cur.fetchall()}
@@ -57,13 +64,14 @@ class YatFeeder:
     async def send(self, yats):
         msg = "\n".join(["{} (RS{})".format(y.get('emoji_id'), y.get('rhythm_score')) for y in yats])
         tasks = [chan.send(msg) for chan in self.channels]
+        # if channel has been deleted it will return discord.NotFound exception. We will disable it at next bot restart
         await asyncio.gather(*tasks, return_exceptions=True)
 
     def start(self):
         logging.info('Starting feeder task for {} livefeeds'.format(len(self.channels)))
         self.task_feeder.start()
 
-    @tasks.loop(seconds=30)
+    @discord.ext.tasks.loop(seconds=30)
     async def task_feeder(self):
         # get list of recently purchased yats
         recent = get_recent_purchases()
