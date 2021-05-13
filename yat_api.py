@@ -98,10 +98,6 @@ def get_recent_purchases():
     if r.status_code != 200:
         return False
     return r.json().get('result')
-
-def test(emoji):
-    print('running')
-    return False
     
 
 def paste(s):

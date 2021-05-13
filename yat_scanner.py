@@ -1,5 +1,5 @@
 
-from yat_api import is_emoji_out, test, get_emoji_list
+from yat_api import is_emoji_out, get_emoji_list
 import config
 
 from discord.ext import tasks
