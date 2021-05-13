@@ -8,6 +8,43 @@ import time
 
 API_URL = "https://a.y.at"
 
+def get_auth_headers():
+    h = {'Accept': '*/*'}
+    if config.YAT_API_KEY:
+        h['Authorization'] = config.YAT_API_KEY
+        h['X-Api-Key'] = config.YAT_API_KEY
+    else:
+        h['Authorization'] = 'Bearer {}'.format(config.YAT_TOKEN)
+    return h
+
+def create_api_key(name):
+    path = API_URL + '/api_keys'
+    data = {'name': name}
+    r = requests.post(path, json=data, headers=get_auth_headers())
+    print(r.text)
+    if r.status_code == 200:
+        return r.json()
+    return False
+
+def test_endpoint(path):
+    path = API_URL + path
+    r = requests.get(path, headers=get_auth_headers())
+    if r.status_code != 200:
+        print("Status:", r.status_code)
+        print(r.text)
+    else:
+        print(r.json())
+
+def test_proxy():
+    path = API_URL + '/proxy'
+    data = {'service': 'Scraper', 'data': 'https://google.com'}
+    r = requests.post(path, headers=get_auth_headers(), json=data)
+    if r.status_code != 200:
+        print("Status:", r.status_code)
+        print(r.text)
+    else:
+        print(r.json())
+
 def get_emoji_list():
     path = API_URL + '/emoji'
     r = requests.get(path, headers={'Accept': '*/*'})
@@ -54,6 +91,13 @@ def is_emoji_out(emoji):
         # WOW!
         return True
     return False
+
+def get_recent_purchases():
+    path = API_URL + '/emoji_id/recent'
+    r = requests.get(path, headers={'Accept': '*/*'})
+    if r.status_code != 200:
+        return False
+    return r.json().get('result')
 
 def test(emoji):
     print('running')
