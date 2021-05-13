@@ -1,24 +1,33 @@
-from discord.ext.commands import Bot
-from discord.ext.commands.errors import MissingRequiredArgument
-from discord import File, Game
+from discord.ext.commands import Bot, guild_only
+from discord.ext.commands.errors import MissingRequiredArgument, BadArgument, CommandError, MissingPermissions
+from discord import File, Game, TextChannel, Member, Intents
 from datetime import datetime
 
 from yat_image import parse_string, check_seq, make_img
 from yat_pattern import get_yats_from_pattern, scan
 from yat_api import paste
 from yat_scanner import YatScanner
+from yat_feeder import YatFeeder
 
 import config
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
+class CommandException(Exception):
+    pass
+
 class YatBot(Bot):
     async def on_ready(self):
         activity = Game("+yatview", start=datetime.now())
         await self.change_presence(activity=activity)
-        self.scanner = YatScanner(self)
-        self.scanner.start()
+
+        if config.START_SCANNER:
+            self.scanner = YatScanner(self)
+            self.scanner.start()
+
+        self.feeder = YatFeeder(self)
+        self.feeder.start()
         logging.info('bot is ready')
 
 bot = YatBot(command_prefix=config.PREFIX)
@@ -56,7 +65,7 @@ async def view_error(ctx, error):
 
 @bot.command()
 async def pattern(ctx, *, pattern):
-    """ +yatpattern [pattern] """
+    """ +yatpattern [pattern] - Check availability of Yats matching pattern """
     logging.info('pattern cmd in {} by {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author))
     if ctx.author.id not in config.PATTERN_COMMAND_AUTHORIZED:
         await ctx.send("Sorry you don't have the permission to use this command. Send a DM to sm4sher#0967 if you're interested!")
@@ -97,6 +106,49 @@ async def scanstatus(ctx):
     else:
         msg += "You aren't subscribed to the notifications. Send a DM to sm4sher#0967 if you're interested!"
     await ctx.send(msg.format('{}s ago'.format((datetime.now()-bot.scanner.last_scan).seconds) if bot.scanner.last_scan else 'never'))
+
+@bot.command()
+async def feed(ctx):
+    """ Print the 10 most recent Yat pruchases """
+    logging.info('feed cmd in {} by {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author))
+    recent = bot.feeder.get_recent_yats()
+    if not recent:
+        await ctx.send('Sorry there was an error, try again later')
+        return
+    recent.reverse()
+    out = 'Recently purchased Yats:\n'
+    out += '\n'.join(["{} (RS{})".format(y.get('emoji_id'), y.get('rhythm_score')) for y in recent]) 
+    out += "\nUse '+yatlivefeed on/off channel' to set up live updates"
+    await ctx.send(out)
+
+@bot.command()
+@guild_only()
+async def livefeed(ctx, switch: bool, channel: TextChannel):
+    """ Set up a livefeed of Yats purchases in the channel of your choice """
+    logging.info('livefeed cmd in {} by {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author))
+    if not ctx.author.permissions_in(channel).manage_channels:
+        raise MissingPermissions("You must have the Manage Channels discord permission to set up a live feed")
+
+    if switch:
+        bot.feeder.register_chan(channel, ctx.author)
+        await ctx.send("The Yat livefeed has been enabled successfuly")
+    else:
+        res, msg = bot.feeder.unregister_chan(channel)
+        if res:
+            await ctx.send("The Yat livefeed has been disabled successfuly")
+        else:
+            await ctx.send(msg)
+
+@livefeed.error
+async def livefeed_error(ctx, error):
+    print(error)
+    if isinstance(error, CommandError):
+        await ctx.send(str(error))
+    else:
+        logging.exception('Error in livefeed command', error)
+        await ctx.send("Sorry there was an error setting up the live feed...")
+
+
 
 if __name__ == "__main__":
     bot.run(config.BOT_TOKEN)
