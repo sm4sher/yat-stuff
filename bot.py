@@ -11,6 +11,7 @@ from yat_feeder import YatFeeder
 
 import config
 import logging
+import typing
 
 logging.basicConfig(level=logging.INFO)
 
@@ -108,10 +109,10 @@ async def scanstatus(ctx):
     await ctx.send(msg.format('{}s ago'.format((datetime.now()-bot.scanner.last_scan).seconds) if bot.scanner.last_scan else 'never'))
 
 @bot.command()
-async def feed(ctx):
-    """ Print the 10 most recent Yat pruchases """
+async def feed(ctx, count: typing.Optional[int]=10):
+    """ Print the 10 most recent Yat purchases """
     logging.info('feed cmd in {} by {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author))
-    recent = bot.feeder.get_recent_yats()
+    recent = bot.feeder.get_recent_yats(limit=min(count, 100))
     if not recent:
         await ctx.send('Sorry there was an error, try again later')
         return
