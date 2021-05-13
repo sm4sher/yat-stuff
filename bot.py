@@ -141,7 +141,6 @@ async def livefeed(ctx, switch: bool, channel: TextChannel):
 
 @livefeed.error
 async def livefeed_error(ctx, error):
-    print(error)
     if isinstance(error, CommandError):
         await ctx.send(str(error))
     else:
