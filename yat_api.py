@@ -94,7 +94,7 @@ def is_emoji_out(emoji):
 
 def get_recent_purchases():
     path = API_URL + '/emoji_id/recent'
-    r = requests.get(path, headers={'Accept': '*/*'})
+    r = requests.get(path, headers={'Accept': '*/*'}, timeout=5)
     if r.status_code != 200:
         return False
     return r.json().get('result')

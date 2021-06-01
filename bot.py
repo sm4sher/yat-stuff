@@ -19,6 +19,7 @@ class CommandException(Exception):
     pass
 
 class YatBot(Bot):
+    feed_started = False
     async def on_ready(self):
         activity = Game("+yatview", start=datetime.now())
         await self.change_presence(activity=activity)
@@ -26,9 +27,10 @@ class YatBot(Bot):
         if config.START_SCANNER:
             self.scanner = YatScanner(self)
             self.scanner.start()
-
-        self.feeder = YatFeeder(self)
-        self.feeder.start()
+        if not self.feed_started:
+            self.feeder = YatFeeder(self)
+            self.feeder.start()
+            self.feed_started = True
         logging.info('bot is ready')
 
 bot = YatBot(command_prefix=config.PREFIX)
