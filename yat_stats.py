@@ -38,6 +38,9 @@ def create_rs_chart(yats):
     plot_rs_for_length(ax, yats, 3, color='red')
     plot_rs_for_length(ax, yats, 4, color='blue')
     plot_rs_for_length(ax, yats, 5, color='green')
+    fig.autofmt_xdate()
+    fig.legend(loc='center right')
+    fig.suptitle('RS of created Yats of different lengths over time')
     plt.show()
 
 def plot_rs_for_length(ax, yats, n, color=None):
@@ -45,7 +48,6 @@ def plot_rs_for_length(ax, yats, n, color=None):
     x = [yat['date'] for yat in yats]
     y = [yat['rs'] for yat in yats]
     ax.plot_date(x, y, xdate=True, ms=2, mec=color, mfc=color, label='{}x yats'.format(n))
-    ax.legend()
 
 def print_top_by_rs(yats, n=10):
     top = sorted(yats, key=lambda y: y['rs'], reverse=True)[:n]
@@ -72,11 +74,13 @@ def time_chart(yats, hourly=False):
     fig, ax = plt.subplots()
     ax.bar(x, y, width=1/24 if hourly else 0.95)
     ax.xaxis_date()
+    fig.autofmt_xdate()
+    fig.suptitle("Number of Yats bought per {}".format('hour' if hourly else 'day'))
     plt.show()
 
 
 if __name__ == "__main__":
-    start = date(2021, 5, 31)
+    start = date(2021, 5, 13)
     end = date(2021, 5, 31)
     yats = load_yats(start, end)
     total_cnt = len(yats)
@@ -85,16 +89,16 @@ if __name__ == "__main__":
     cnt_5 = get_count_by_length(yats, 5)
     avg_rs = round(sum([y['rs'] for y in yats])/len(yats), 2)
     cnt_rs_90 = len([True for y in yats if y['rs'] >= 90])
-    print('Between {} and {}, {} yats have been purchased!'.format(start, end, total_cnt))
-    print('{} were 3 emojis, {} were 4 emojis and {} were 5 emojis.'.format(cnt_3, cnt_4, cnt_5))
-    print('Average Rythm Score was {}, with {} yats above RS90'.format(avg_rs, cnt_rs_90))
+    print('Between {} and {}, **{}** yats have been created!'.format(start, end, total_cnt))
+    print('**{}** were 3 emojis, **{}** were 4 emojis and **{}** were 5 emojis.'.format(cnt_3, cnt_4, cnt_5))
+    print('Average Rhythm Score was **{}**, with **{}** yats above RS90'.format(avg_rs, cnt_rs_90))
     emojis = split_yats(yats)
-    print("\n==== Emojis Leaderboard ====\n")
+    print("\n**==== Emojis Leaderboard ====**\n")
     print_top(emojis)
-    print("\n==== RS Leaderboard ====\n")
+    print("\n**==== RS Leaderboard ====**\n")
     print_top_by_rs(yats)
 
 
     #export_csv(yats)
-    #create_rs_chart(yats)
-    time_chart(yats)
+    create_rs_chart(yats)
+    time_chart(yats, hourly=True)
