@@ -1,6 +1,7 @@
 import logging
 import sqlite3
 import asyncio
+import os
 from datetime import datetime, timezone, timedelta
 
 import discord
@@ -28,6 +29,7 @@ class YatFeeder:
         # snwoflake ids should be int? if sqlite supports 64bits int
         self.db_exec("CREATE TABLE IF NOT EXISTS purch_yats (date text, yat text, rs int)")
         self.db_exec("CREATE TABLE IF NOT EXISTS livefeeds (created_date text, channel_id text, creator_id text, enabled int)")
+        self.db_exec("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY, filename text, sched_date text, sent int)")
 
     def load_config(self):
         cur = self.db_exec("SELECT channel_id FROM livefeeds WHERE enabled=1")
@@ -61,11 +63,22 @@ class YatFeeder:
         self.db_exec("UPDATE livefeeds SET enabled=0 WHERE channel_id=?", (channel.id,))
         return True, ''
 
-    async def send(self, yats):
-        msg = "\n".join(["{} (RS{})".format(y.get('emoji_id'), y.get('rhythm_score')) for y in yats])
+    async def send(self, msg):
         tasks = [chan.send(msg) for chan in self.channels]
         # if channel has been deleted it will return discord.NotFound exception. We will disable it at next bot restart
         await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def check_annoucements(self):
+        announcements = self.db_exec("SELECT id, filename FROM announcements WHERE sent=0 AND datetime('now') >= datetime(sched_date)").fetchall()
+        for ann in announcements:
+            await self.make_annoucement({'id': ann[0], 'filename': ann[1]})
+
+    async def make_annoucement(self, ann):
+        logging.info('Sending livefeed annoucement id {}'.format(ann['id']))
+        with open(os.path.join('announcements', ann['filename']), "r") as f:
+            content = f.read()
+        self.db_exec("UPDATE announcements SET sent=1 WHERE id=?", (ann['id'],))
+        await self.send(content)
 
     def start(self):
         logging.info('Starting feeder task for {} livefeeds'.format(len(self.channels)))
@@ -73,6 +86,7 @@ class YatFeeder:
 
     @discord.ext.tasks.loop(seconds=30)
     async def task_feeder(self):
+        await self.check_annoucements()
         # get list of recently purchased yats
         recent = get_recent_purchases()
         if not recent:
@@ -85,7 +99,8 @@ class YatFeeder:
             return
         self.update_processed_list(new)
         # send msgs in each livefeed
-        await self.send(new)
+        msg = "\n".join(["{} (RS{})".format(y.get('emoji_id'), y.get('rhythm_score')) for y in new])
+        await self.send(msg)
 
     def get_recent_yats(self, limit=10):
         cur = self.db_exec("SELECT yat, rs FROM purch_yats ORDER BY date DESC LIMIT ?", (limit,))
