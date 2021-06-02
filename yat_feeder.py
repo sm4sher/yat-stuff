@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import discord
 
@@ -45,7 +45,7 @@ class YatFeeder:
 
     def update_processed_list(self, yats):
         self.processed_list |= {y.get('emoji_id') for y in yats}
-        values = [(datetime.now().isoformat(), y.get('emoji_id'), y.get('rhythm_score')) for y in yats]
+        values = [((datetime.now(tz=timezone.utc)-timedelta(hours=22)).isoformat(), y.get('emoji_id'), y.get('rhythm_score')) for y in yats]
         self.db_exec("INSERT INTO purch_yats (date, yat, rs) VALUES (?, ?, ?)", values, many=True)
 
     def register_chan(self, channel, creator):
