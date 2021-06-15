@@ -54,7 +54,7 @@ async def view(ctx, *, arg):
     emo_seq = parse_string(arg)
     res, msg = check_seq(emo_seq)
     if not res:
-        await ctx.reply("{} {}".format(ctx.author.mention, msg))
+        await ctx.reply(msg)
         return
     try:
         img = make_img(emo_seq)
@@ -86,7 +86,7 @@ async def pattern(ctx, *, pattern):
         res = await bot.loop.run_in_executor(None, scan, yats)
     except:
         logging.exception("Error while performing pattern search")
-        await ctx.reply("{} sorry there was an error...")
+        await ctx.reply("Sorry there was an error...")
         return
     if len(res) > 1000:
         link = paste(res)
