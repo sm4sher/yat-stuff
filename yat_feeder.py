@@ -42,7 +42,7 @@ class YatFeeder:
             else:
                 self.channels.add(chan)
 
-        cur = self.db_exec("SELECT yat FROM purch_yats")
+        cur = self.db_exec("SELECT yat FROM purch_yats WHERE date > ?", ((datetime.now(tz=timezone.utc)-timedelta(days=4)).isoformat(),))
         self.processed_list = {line[0] for line in cur.fetchall()}
 
     def update_processed_list(self, yats):
