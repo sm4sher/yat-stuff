@@ -11,8 +11,8 @@ fonts = [
 		'name': "Apple",
 	},
 	{
-		'font': ImageFont.truetype("fonts/twemoji_JF.ttf", 61), 
-		'size': 61,
+		'font': ImageFont.truetype("fonts/TwemojiMozilla.ttf", 109),
+		'size': 109,
 		'name': "Twitter & Discord",
 	},
 	{
