@@ -11,7 +11,8 @@ fonts = [
 		'name': "Apple",
 	},
 	{
-		'font': ImageFont.truetype("fonts/TwemojiMozilla.ttf", 109),
+		# Twemoji appears smaller for some reason, this solves it:
+		'font': ImageFont.truetype("fonts/TwemojiMozilla.ttf", 125), 
 		'size': 109,
 		'name': "Twitter & Discord",
 	},
@@ -27,16 +28,16 @@ fonts = [
 	},
 	
 ]
-NAME_FONT = ImageFont.truetype("truetype/lberation/LiberationSansNarrow-Regular.ttf", 20)
-TITLE_FONT = ImageFont.truetype("truetype/lberation/LiberationSans-Bold.ttf", 20)
-INFO_FONT = ImageFont.truetype("truetype/lberation/LiberationSans-Regular.ttf", 20)
-CREDIT_FONT = ImageFont.truetype("truetype/lberation/LiberationSans-Bold.ttf", 10)
+NAME_FONT = ImageFont.truetype("truetype/lberation/LiberationSansNarrow-Regular.ttf", 40)
+TITLE_FONT = ImageFont.truetype("truetype/lberation/LiberationSans-Bold.ttf", 40)
+INFO_FONT = ImageFont.truetype("truetype/lberation/LiberationSans-Regular.ttf", 40)
+CREDIT_FONT = ImageFont.truetype("truetype/lberation/LiberationSans-Bold.ttf", 20)
 
 
 emojis = get_emoji_list()
 
-WD = 400
-HT = 650
+WD = 800
+HT = 1300
 
 def make_background():
 	imgsize = (WD, HT) #The size of the image
@@ -86,20 +87,21 @@ def make_img(seq):
 	d = ImageDraw.Draw(img)
 	inner_wd = round(0.9*WD)
 	margin = (WD - inner_wd) // 2
-	x = margin
-	d.text((WD//2, x), "Here's how your Yat looks on", anchor="mt", font=TITLE_FONT)
-	x += 40
+	y_spacing = HT // 25
+	y = y_spacing
+	d.text((WD//2, y), "Here's how your Yat looks on", anchor="mt", font=TITLE_FONT)
+	y += y_spacing*2
 	for i, fnt in enumerate(fonts):
-		d.text((margin, x), fnt['name'], font=NAME_FONT)
-		x += 35
+		d.text((margin, y), fnt['name'], font=NAME_FONT)
+		y += y_spacing
 		emo_strip = make_emo_strip(txt, fnt, inner_wd)
-		img.paste(emo_strip, (margin, x), emo_strip) # alpha from emo_strip used as mask =)
-		x += emo_strip.height + margin
+		img.paste(emo_strip, (margin, y), emo_strip) # alpha from emo_strip used as mask =)
+		y += emo_strip.height + y_spacing
 	
 	info_strip = make_info_strip(txt)
-	img.paste(info_strip, (0, x), info_strip)
-	credit_strip = make_credit()
-	img.paste(credit_strip, (WD-credit_strip.width-2, HT-credit_strip.height-2), credit_strip)
+	img.paste(info_strip, (0, y), info_strip)
+	#credit_strip = make_credit()
+	#img.paste(credit_strip, (WD-credit_strip.width-2, HT-credit_strip.height-2), credit_strip)
 	#img.show()
 	f = BytesIO()
 	img.save(f, "png")
