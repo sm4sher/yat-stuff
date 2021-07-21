@@ -13,7 +13,10 @@ import config
 import logging
 import typing
 
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s: %(message)s", filename="yat_bot.log", level=logging.INFO)
+if config.DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s: %(message)s", filename="yat_bot.log", level=logging.INFO)
 
 class CommandException(Exception):
     pass
