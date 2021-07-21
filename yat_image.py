@@ -67,6 +67,8 @@ def make_background():
 	return image
 
 def check_seq(seq):
+	if '<' in seq and '>' in seq:
+		return False, "Can't use custom Discord emojis"
 	if not 1 <= len(seq) <= 5:
 		return False, "Invalid length"
 	for emo in seq:
