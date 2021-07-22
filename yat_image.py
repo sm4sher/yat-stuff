@@ -83,6 +83,9 @@ def make_img(seq):
 		print(msg)
 		return
 	txt = ''.join(seq)
+	# on the server (with the exact same config as my dev env) it displays the FE0F as an empty or white char...
+	# since we use emoji font we shouldn't need the modifier anyway? So this might fix it
+	txt = txt.replace(b'\xef\xb8\x8f'.decode(), '')
 	img = make_background()
 	d = ImageDraw.Draw(img)
 	inner_wd = round(0.9*WD)
