@@ -29,9 +29,9 @@ def get_count_by_length(yats, n):
 
 def export_csv(yats):
     with open('stats.csv', 'w+') as f:
-        f.write('date,eid,rs,length\n')
+        f.write('date,yat,rs,length\n')
         for y in yats:
-            f.write('{},{},{},{}\n'.format(y['date'], y['emoji_id'], y['rs'], len(split_yat(y['emoji_id']))))
+            f.write('{},{},{},{}\n'.format(y['date'], '-'.join(split_yat(y['emoji_id'])), y['rs'], len(split_yat(y['emoji_id']))))
 
 def create_rs_chart(yats):
     fig, ax = plt.subplots()
@@ -55,8 +55,8 @@ def print_top_by_rs(yats, n=10):
         print('{}: {} (RS{})'.format(i+1, yat['emoji_id'], yat['rs']))
 
 def time_chart(yats, hourly=False):
-    start = datetime(year=2021, month=5, day=13)
-    end = datetime(year=2021, month=5, day=31, hour=23)
+    start = datetime(year=2021, month=6, day=1)
+    end = datetime(year=2021, month=6, day=30, hour=23)
     x = []
     while start <= end:
         x.append(start)
@@ -80,8 +80,8 @@ def time_chart(yats, hourly=False):
 
 
 if __name__ == "__main__":
-    start = date(2021, 5, 13)
-    end = date(2021, 5, 31)
+    start = date(2020, 6, 1)
+    end = date(2022, 6, 30)
     yats = load_yats(start, end)
     total_cnt = len(yats)
     cnt_3 = get_count_by_length(yats, 3)
@@ -99,6 +99,6 @@ if __name__ == "__main__":
     print_top_by_rs(yats)
 
 
-    #export_csv(yats)
-    create_rs_chart(yats)
-    time_chart(yats, hourly=True)
+    export_csv(yats)
+    #create_rs_chart(yats)
+    #time_chart(yats, hourly=False)
