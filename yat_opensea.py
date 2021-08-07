@@ -16,7 +16,10 @@ class OpenseaFeeder:
         self.task = None
         self.aiosession = None
 
-        self.load_last_sales_check()
+        # remember start time so we can filter out the yats bought before that we haven't stored
+        self.startup_time = int(datetime.datetime.now().timestamp())
+        self.seen_sale_ids = set()
+
         self.twitter = TwitterBot()
         self.discord = discord
 
@@ -71,27 +74,15 @@ class OpenseaFeeder:
             await self.discord.feeder.send(discord_txt)
 
     async def check_new_sales(self):
-        sales = await self.get_events(event_type="successful", occured_after=self.last_sales_check)
+        sales = await self.get_events(event_type="successful", occured_after=self.startup_time)
         if sales is False:
             return
-        self.update_last_sales_check()
-        for sale in sales[::-1]:
+        # reverse order and filter out the sales we've already seen
+        sales = [sale for sale in sales[::-1] if sale['id'] not in self.seen_sale_ids]
+        for sale in sales:
+            self.seen_sale_ids.add(sale['id'])
             await self.handle_new_sale(sale)
             await asyncio.sleep(2)
-
-    # would be better to store it in the feed.db
-    def update_last_sales_check(self):
-        self.last_sales_check = int(datetime.datetime.now().timestamp())
-        # write it in a file so we don't restart at zero when bot starts...
-        with open("lastossalescheck", "w+") as f:
-            f.write(str(self.last_sales_check))
-
-    def load_last_sales_check(self):
-        try:
-            with open("lastossalescheck", "r") as f:
-                self.last_sales_check = int(f.read())
-        except FileNotFoundError:
-            self.update_last_sales_check()
 
     async def get_events(self, event_type="", occured_after=0):
         """ 
@@ -104,7 +95,7 @@ class OpenseaFeeder:
             "asset_contract_address": self.CONTRACT_ADDRESS,
             "event_type": event_type,
             "occurred_after": occured_after,
-            "limit": 100,
+            "limit": 25,
             #"offset": 0
         }
         async with s.get(url, params=params) as r:
