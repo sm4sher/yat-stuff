@@ -68,7 +68,7 @@ class OpenseaFeeder:
 
         if self.discord is not None:
             discord_txt = self.fill_template(self.DISCORD_TEMPLATE, s)
-            self.discord.feeder.send(discord_txt)
+            await self.discord.feeder.send(discord_txt)
 
     async def check_new_sales(self):
         sales = await self.get_events(event_type="successful", occured_after=self.last_sales_check)
