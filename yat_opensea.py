@@ -9,14 +9,16 @@ class OpenseaFeeder:
     REFRESH_INTERVAL = 200
     API_URL = "https://api.opensea.io/api/v1"
     CONTRACT_ADDRESS = "0x7d256d82b32d8003d1ca1a1526ed211e6e0da9e2"
-    TWEET_TEMPLATE = "\"{yatname}\" was bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n#yat #nft #opensea\n{oslink}"
+    TWEET_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n#yat #nft #opensea\n{oslink}"
+    DISCORD_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n{oslink}"
 
-    def __init__(self):
+    def __init__(self, discord=None):
         self.task = None
         self.aiosession = None
 
         self.load_last_sales_check()
         self.twitter = TwitterBot()
+        self.discord = discord
 
     def start(self):
         if self.task is not None:
@@ -45,9 +47,9 @@ class OpenseaFeeder:
                 logging.exception("Error during OpenseaFeeder operation:")
                 await asyncio.sleep(5)
 
-    async def handle_new_sale(self, s):
+    def fill_template(self, template, s):
         token_price=int(s['total_price']) / (10 ** s['payment_token']['decimals'])
-        txt = self.TWEET_TEMPLATE.format(
+        return template.format(
             oslink=s['asset']['permalink'],
             yatlink=s['asset']['external_link'],
             imglink=s['asset']['image_original_url'],
@@ -58,8 +60,15 @@ class OpenseaFeeder:
             tokensymbol=s['payment_token']['symbol'],
             usdprice=round(token_price*float(s['payment_token']['usd_price']))
         )
+
+    async def handle_new_sale(self, s):
         # not really async yet but should be at some point (depends on tweepy)
-        await self.twitter.send_tweet(txt)
+        twitter_txt = self.fill_template(self.TWITTER_TEMPLATE, s)
+        await self.twitter.send_tweet(twitter_txt)
+
+        if self.discord is not None:
+            discord_txt = self.fill_template(self.DISCORD_TEMPLATE, s)
+            self.discord.feeder.send(discord_txt)
 
     async def check_new_sales(self):
         sales = await self.get_events(event_type="successful", occured_after=self.last_sales_check)

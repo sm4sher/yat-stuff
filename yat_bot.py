@@ -37,7 +37,7 @@ class YatBot(Bot):
             self.feeder.start()
             self.feed_started = True
         if not self.os_feed_started:
-            self.os_feeder = OpenseaFeeder()
+            self.os_feeder = OpenseaFeeder(discord=self)
             self.os_feeder.start()
             self.os_feed_started = True
         logging.info('bot is ready')
