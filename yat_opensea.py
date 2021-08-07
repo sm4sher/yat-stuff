@@ -9,7 +9,7 @@ class OpenseaFeeder:
     REFRESH_INTERVAL = 200
     API_URL = "https://api.opensea.io/api/v1"
     CONTRACT_ADDRESS = "0x7d256d82b32d8003d1ca1a1526ed211e6e0da9e2"
-    TWEET_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n#yat #nft #opensea\n{oslink}"
+    TWITTER_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n#yat #nft #opensea\n{oslink}"
     DISCORD_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n{oslink}"
 
     def __init__(self, discord=None):
@@ -29,7 +29,7 @@ class OpenseaFeeder:
 
     def stop(self):
         logging.info("Stopping OpenseaFeeder task")
-        self.task.cancel()       
+        self.task.cancel()
 
     async def run(self):
         logging.info("OpenseaFeeder task running")
@@ -123,5 +123,5 @@ if __name__ == "__main__":
     feeder = OpenseaFeeder()
     loop = asyncio.get_event_loop()
     #loop.call_later(20, feeder.stop)
-    feeder.start()
+    loop.run_until_complete(feeder.run())
 
