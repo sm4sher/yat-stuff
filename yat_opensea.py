@@ -9,8 +9,18 @@ class OpenseaFeeder:
     REFRESH_INTERVAL = 200
     API_URL = "https://api.opensea.io/api/v1"
     CONTRACT_ADDRESS = "0x7d256d82b32d8003d1ca1a1526ed211e6e0da9e2"
-    TWITTER_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n#yat #nft #opensea\n{oslink}"
-    DISCORD_TEMPLATE = "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n{oslink}"
+    TWITTER_TEMPLATE = {
+        "txt": "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n#yat #nft #opensea\n{oslink}",
+        # url length = 23, len('"" was just bought for 0.0000000000000000000 AAAAAA ($999999)!\n\n#yat #nft #opensea\n') = 83
+        "noname_length": 83 + 23,
+        "max_length": 240
+    }
+    DISCORD_TEMPLATE = {
+        "txt": "\"{yatname}\" was just bought for {tokenprice} {tokensymbol} (${usdprice})!\n\n{oslink}",
+        # discord links are not shortened (i don't think someone will (or even can) put a 1900char name but we never know)
+        "noname_length": 64 + 76,
+        "max_length": 2000
+    }
 
     def __init__(self, discord=None):
         self.task = None
@@ -52,12 +62,16 @@ class OpenseaFeeder:
 
     def fill_template(self, template, s):
         token_price=int(s['total_price']) / (10 ** s['payment_token']['decimals'])
-        return template.format(
+        # todo: maybe add filtering to avoid mentions/url/hashtag injections
+        name = s['asset']['name']
+        if template['noname_length'] + len(name) > template['max_length']:
+            name = name[:20] + " ... " + name[-20:]
+        return template['txt'].format(
             oslink=s['asset']['permalink'],
             yatlink=s['asset']['external_link'],
             imglink=s['asset']['image_original_url'],
             vidlink=s['asset']['animation_original_url'],
-            yatname=s['asset']['name'],
+            yatname=name,
             yatemojis="", # url decode yat link?
             tokenprice=token_price,
             tokensymbol=s['payment_token']['symbol'],
