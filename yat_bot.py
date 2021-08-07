@@ -8,6 +8,7 @@ from yat_pattern import get_yats_from_pattern, scan
 from yat_api import paste
 from yat_scanner import YatScanner
 from yat_feeder import YatFeeder
+from yat_opensea import OpenseaFeeder
 
 import config
 import logging
@@ -23,6 +24,7 @@ class CommandException(Exception):
 
 class YatBot(Bot):
     feed_started = False
+    os_feed_started = False
     async def on_ready(self):
         activity = Game("{}view".format(config.PREFIX), start=datetime.now())
         await self.change_presence(activity=activity)
@@ -34,6 +36,10 @@ class YatBot(Bot):
             self.feeder = YatFeeder(self)
             self.feeder.start()
             self.feed_started = True
+        if not self.os_feed_started:
+            self.os_feeder = OpenseaFeeder()
+            self.os_feeder.start()
+            self.os_feed_started = True
         logging.info('bot is ready')
 
     async def on_command_error(self, ctx, error):

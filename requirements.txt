@@ -3,3 +3,5 @@ requests
 Pillow
 matplotlib
 regex
+aiohttp[speedups]
+tweepy
