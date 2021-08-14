@@ -65,18 +65,16 @@ class OpenseaFeeder:
                 logging.exception("Error during OpenseaFeeder operation:")
                 await asyncio.sleep(5)
 
-    def fill_template(self, template, s, m=None, i=None):
+    def fill_template(self, template, s, m=None, i=None, emoji_id="?"):
         token_price=int(s['total_price']) / (10 ** s['payment_token']['decimals'])
         if m:
             traits = {t['trait_type']: t['value'] for t in m.get('attributes', [])}
         else:
             traits = {}
         if i:
-            emoji_id = i.get('emoji_id', "?")
             rs = i.get('rhythm_score', "?")
         else:
-            emoji_id = "?"
-            rs = "?"
+            rs = traits.get('Rhythm Score', "?")
 
         gen = "📅 {}".format(traits['Generation']) if traits.get('Generation') else ""
         origin = "\n🐣 Origin: {}".format(traits.get('Origin').replace('_', ' ').title()) if traits.get('Origin') else ""
@@ -104,16 +102,21 @@ class OpenseaFeeder:
         )
 
     async def handle_new_sale(self, s):
-        # we need to fetch both to have exact RS and origin :/
+        # we need to fetch both metadata and infos to get exact RS and origin :/
         metadata = await self.yat_api.get_metadata(s['asset']['token_id'])
-        emoji_id = get_yat_from_url(s['asset']['external_link'])
+        if metadata:
+            yat_url = metadata.get('external_link')
+        else:
+            yat_url = s['asset'].get('external_link')
+        emoji_id = get_yat_from_url(yat_url)
         infos = await self.yat_api.get_infos(emoji_id)
+
         # not really async yet but should be at some point (depends on tweepy)
-        twitter_txt = self.fill_template(self.TWITTER_TEMPLATE, s, metadata, infos)
+        twitter_txt = self.fill_template(self.TWITTER_TEMPLATE, s, metadata, infos, emoji_id)
         await self.twitter.send_tweet(twitter_txt)
 
         if self.discord is not None:
-            discord_txt = self.fill_template(self.DISCORD_TEMPLATE, s, metadata, infos)
+            discord_txt = self.fill_template(self.DISCORD_TEMPLATE, s, metadata, infos, emoji_id)
             await self.discord.feeder.send(discord_txt)
 
     async def check_new_sales(self):
