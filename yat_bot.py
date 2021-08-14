@@ -165,6 +165,27 @@ async def livefeed_error(ctx, error):
         logging.exception('Error in livefeed command', error)
         await ctx.reply("Sorry there was an error setting up the live feed...")
 
+@bot.command()
+@guild_only()
+async def openseafeed(ctx, switch: bool, channel: TextChannel):
+    """ Set up a livefeed of Yats secondary sales in the channel of your choice """
+    logging.info('openseafeed cmd in {} by {}'.format(ctx.guild if ctx.guild else 'DM', ctx.author))
+    if not ctx.author.permissions_in(channel).manage_channels:
+        raise MissingPermissions("You must have the Manage Channels discord permission to set up a live feed")
+
+    if switch:
+        bot.feeder.register_os_chan(channel, ctx.author)
+        await ctx.reply("The Yat livefeed has been enabled successfuly")
+    else:
+        res, msg = bot.feeder.unregister_os_chan(channel)
+        if res:
+            await ctx.reply("The Yat livefeed has been disabled successfuly")
+        else:
+            await ctx.reply(msg)
+
+@openseafeed.error
+async def openseafeed_error(ctx, error):
+    await livefeed_error(ctx, error)
 
 
 if __name__ == "__main__":
