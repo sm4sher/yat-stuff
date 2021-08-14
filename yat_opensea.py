@@ -85,6 +85,8 @@ class OpenseaFeeder:
 
         # todo: maybe add filtering to avoid mentions/url/hashtag injections
         name = s['asset']['name']
+        if name is None:
+            name = emoji_id
         if template['noname_length'] + len(name) > template['max_length']:
             name = name[:20] + " ... " + name[-20:]
         return template['txt'].format(
