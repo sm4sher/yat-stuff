@@ -57,6 +57,7 @@ class OpenseaFeeder:
             except asyncio.CancelledError:
                 if self.aiosession is not None:
                     await self.aiosession.close()
+                await self.yat_api.close()
                 self.task = None
                 logging.info("Stopped OpenseaFeeder task")
                 break

@@ -131,6 +131,10 @@ class YatAPI:
         self.aiosession = aiohttp.ClientSession()
         return self.aiosession
 
+    async def close(self):
+        if self.aiosession is not None:
+            await self.aiosession.close()
+
 
 def paste(s):
     '''post s to pastebin and returns the link (yes this has nothing to do here)'''
