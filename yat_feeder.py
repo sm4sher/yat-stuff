@@ -88,9 +88,9 @@ class YatFeeder:
         return True, ''
 
     async def send(self, msg, feed_type=0):
-        if feed_type = 0:
+        if feed_type == 0:
             channels = self.channels
-        elif feed_type = 1:
+        elif feed_type == 1:
             channels = self.os_channels
         tasks = [chan.send(msg) for chan in channels]
         # if channel has been deleted it will return discord.NotFound exception. We will disable it at next bot restart
