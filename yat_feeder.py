@@ -29,6 +29,7 @@ class YatFeeder:
         # snwoflake ids should be int? if sqlite supports 64bits int
         self.db_exec("CREATE TABLE IF NOT EXISTS purch_yats (date text, yat text, rs int)")
         self.db_exec("CREATE TABLE IF NOT EXISTS livefeeds (created_date text, channel_id text, creator_id text, enabled int)")
+        self.db_exec("CREATE TABLE IF NOT EXISTS osfeeds (created_date text, channel_id text, creator_id text, enabled int)")
         self.db_exec("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY, filename text, sched_date text, sent int)")
 
     def load_config(self):
@@ -41,6 +42,16 @@ class YatFeeder:
                 self.db_exec("UPDATE livefeeds SET enabled=0 WHERE channel_id=?", (line[0],))
             else:
                 self.channels.add(chan)
+
+        cur = self.db_exec("SELECT channel_id FROM osfeeds WHERE enabled=1")
+        lines = cur.fetchall()
+        self.os_channels = set()
+        for line in lines:
+            chan = self.bot.get_channel(int(line[0]))
+            if chan is None:
+                self.db_exec("UPDATE osfeeds SET enabled=0 WHERE channel_id=?", (line[0],))
+            else:
+                self.os_channels.add(chan)
 
         cur = self.db_exec("SELECT yat FROM purch_yats WHERE date > ?", ((datetime.now(tz=timezone.utc)-timedelta(days=4)).isoformat(),))
         self.processed_list = {line[0] for line in cur.fetchall()}
@@ -63,8 +74,25 @@ class YatFeeder:
         self.db_exec("UPDATE livefeeds SET enabled=0 WHERE channel_id=?", (channel.id,))
         return True, ''
 
-    async def send(self, msg):
-        tasks = [chan.send(msg) for chan in self.channels]
+    def register_os_chan(self, channel, creator):
+        self.os_channels.add(channel)
+        self.db_exec("INSERT INTO osfeeds (created_date, channel_id, creator_id, enabled) VALUES (?, ?, ?, 1)",
+            (datetime.now().isoformat(), channel.id, creator.id))
+
+    def unregister_os_chan(self, channel):
+        try:
+            self.os_channels.remove(channel)
+        except KeyError:
+            return False, "No active livefeed in this channel"
+        self.db_exec("UPDATE osfeeds SET enabled=0 WHERE channel_id=?", (channel.id,))
+        return True, ''
+
+    async def send(self, msg, feed_type=0):
+        if feed_type = 0:
+            channels = self.channels
+        elif feed_type = 1:
+            channels = self.os_channels
+        tasks = [chan.send(msg) for chan in channels]
         # if channel has been deleted it will return discord.NotFound exception. We will disable it at next bot restart
         await asyncio.gather(*tasks, return_exceptions=True)
 
