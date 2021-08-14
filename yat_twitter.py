@@ -6,9 +6,9 @@ import tweepy
 import config
 
 class TwitterBot:
-    def __init__(self):
+    def __init__(self, access_token, access_secret):
         auth = tweepy.OAuthHandler(config.TWITTER_CONSUMER_KEY, config.TWITTER_CONSUMER_SECRET)
-        auth.set_access_token(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_SECRET)
+        auth.set_access_token(access_token, access_secret)
         self.api = tweepy.API(auth, wait_on_rate_limit=True)
 
     async def send_tweet(self, txt):

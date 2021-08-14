@@ -5,7 +5,8 @@ import datetime
 
 from yat_twitter import TwitterBot
 from yat_api import YatAPI
-from yat_utils import get_yat_from_url
+from yat_utils import get_yat_from_url, split_yat
+import config
 
 class OpenseaFeeder:
     REFRESH_INTERVAL = 200
@@ -34,7 +35,8 @@ class OpenseaFeeder:
         self.seen_sale_ids = set()
 
         self.yat_api = YatAPI()
-        self.twitter = TwitterBot()
+        self.twitter = TwitterBot(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_SECRET)
+        self.twipeater = None #TwitterBot(config.TWIPEATER_ACCESS_TOKEN, config.TWIPEATER_ACCESS_SECRET)
         self.discord = discord
 
     def start(self):
@@ -110,10 +112,18 @@ class OpenseaFeeder:
             yat_url = s['asset'].get('external_link')
         emoji_id = get_yat_from_url(yat_url)
         infos = await self.yat_api.get_infos(emoji_id)
+        token_price=int(s['total_price']) / (10 ** s['payment_token']['decimals'])
+        usd_price = round(token_price*float(s['payment_token']['usd_price']))
 
-        # not really async yet but should be at some point (depends on tweepy)
-        twitter_txt = self.fill_template(self.TWITTER_TEMPLATE, s, metadata, infos, emoji_id)
-        await self.twitter.send_tweet(twitter_txt)
+        if self.twitter is not None and usd_price >= config.TWITTER_MIN_USD_SALE_PRICE:
+            # not really async yet but should be at some point (depends on tweepy)
+            twitter_txt = self.fill_template(self.TWITTER_TEMPLATE, s, metadata, infos, emoji_id)
+            await self.twitter.send_tweet(twitter_txt)
+
+        if self.twipeater is not None and len(set(split_yat(emoji_id))) == 1:
+            # this is a repeater
+            twipeater_txt = self.fill_template(self.TWITTER_TEMPLATE, s, metadata, infos, emoji_id)
+            await self.twipeater.send_tweet(twipeater_txt)
 
         if self.discord is not None:
             discord_txt = self.fill_template(self.DISCORD_TEMPLATE, s, metadata, infos, emoji_id)
