@@ -36,7 +36,7 @@ class OpenseaFeeder:
 
         self.yat_api = YatAPI()
         self.twitter = TwitterBot(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_SECRET)
-        self.twipeater = None #TwitterBot(config.TWIPEATER_ACCESS_TOKEN, config.TWIPEATER_ACCESS_SECRET)
+        self.twipeater = TwitterBot(config.TWIPEATER_ACCESS_TOKEN, config.TWIPEATER_ACCESS_SECRET)
         self.discord = discord
 
     def start(self):
@@ -127,7 +127,7 @@ class OpenseaFeeder:
 
         if self.discord is not None:
             discord_txt = self.fill_template(self.DISCORD_TEMPLATE, s, metadata, infos, emoji_id)
-            await self.discord.feeder.send(discord_txt)
+            await self.discord.feeder.send(discord_txt, feed_type=1)
 
     async def check_new_sales(self):
         sales = await self.get_events(event_type="successful", occured_after=self.startup_time)
