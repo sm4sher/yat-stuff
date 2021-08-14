@@ -78,7 +78,7 @@ class OpenseaFeeder:
             rs = "?"
 
         gen = "📅 {}".format(traits['Generation']) if traits.get('Generation') else ""
-        origin = "\n🐣 Origin: {}".format(traits.get('Origin')) if traits.get('Origin') else ""
+        origin = "\n🐣 Origin: {}".format(traits.get('Origin').replace('_', ' ').title()) if traits.get('Origin') else ""
         shape = "\n✨ Shape: {}".format(traits.get('Shape')) if traits.get('Shape') else ""
         infos = "{gen}\n💯 RS {rs}{origin}{shape}".format(
             rs=rs, gen=gen, origin=origin, shape=shape)
