@@ -1,4 +1,5 @@
 import requests
+import aiohttp
 from multiprocessing import Pool
 import config
 
@@ -98,7 +99,38 @@ def get_recent_purchases():
     if r.status_code != 200:
         return False
     return r.json().get('result')
+
+class YatAPI:
+    API_URL = "https://a.y.at"
+
+    def __init__(self):
+        self.aiosession = None
+
+    async def get_metadata(self, token_id):
+        s = await self.get_aiosession()
+        path = self.API_URL + '/nft_transfers/metadata/{}'.format(token_id)
+        async with s.get(path) as r:
+            if r.status != 200:
+                return False
+            return await r.json()
     
+    async def get_infos(self, emoji_id):
+        s = await self.get_aiosession()
+        path = self.API_URL + '/emoji_id/search'
+        params = {'emoji_id': emoji_id}
+        async with s.get(path, params=params) as r:
+            if r.status != 200:
+                return False
+            resp_json = await r.json()
+            return resp_json.get('result')
+
+    # consider making a helper parent class for this and OpenseaFeeder
+    async def get_aiosession(self):
+        if self.aiosession is not None:
+            return self.aiosession
+        self.aiosession = aiohttp.ClientSession()
+        return self.aiosession
+
 
 def paste(s):
     '''post s to pastebin and returns the link (yes this has nothing to do here)'''
