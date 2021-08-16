@@ -5,7 +5,7 @@ import datetime
 
 from yat_twitter import TwitterBot
 from yat_api import YatAPI
-from yat_utils import get_yat_from_url, split_yat
+from yat_utils import get_yat_from_url, split_yat, twitter_sanitize
 import config
 
 class OpenseaFeeder:
@@ -87,6 +87,7 @@ class OpenseaFeeder:
         name = s['asset']['name']
         if name is None:
             name = emoji_id
+        name = twitter_sanitize(name)
         if template['noname_length'] + len(name) > template['max_length']:
             name = name[:20] + " ... " + name[-20:]
         return template['txt'].format(
@@ -103,8 +104,12 @@ class OpenseaFeeder:
         )
 
     async def handle_new_sale(self, s):
+        token_id = s['asset']['token_id']
+        if token_id in config.TOKEN_BLACKLIST:
+            logging.info("Skipping sale of blacklisted token {}".format(token_id))
+            return
         # we need to fetch both metadata and infos to get exact RS and origin :/
-        metadata = await self.yat_api.get_metadata(s['asset']['token_id'])
+        metadata = await self.yat_api.get_metadata(token_id)
         if metadata:
             yat_url = metadata.get('external_link')
         else:
