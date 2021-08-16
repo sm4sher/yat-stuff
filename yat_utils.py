@@ -14,5 +14,5 @@ def twitter_sanitize(s, max_length=None):
     s = s.replace('@', '@.')
     if max_length and len(s) > max_length:
         l = (max_length - 10) // 2
-        s = name[:l] + " [...] " + name[-l:]
+        s = s[:l] + " [...] " + s[-l:]
     return s
