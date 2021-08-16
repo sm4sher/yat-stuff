@@ -74,15 +74,14 @@ class OpenseaFeeder:
         else:
             traits = {}
         if i:
-            rs = i.get('rhythm_score', "?")
+            rs = "\n💯 RS {}".format(i['rhythm_score']) if i.get('rhythm_score') else ""
         else:
-            rs = traits.get('Rhythm Score', "?")
+            rs = "\n💯 RS {}".format(traits['Rhythm Score']) if traits.get('Rhythm Score') else ""
 
         gen = "📅 {}".format(traits['Generation']) if traits.get('Generation') else ""
         origin = "\n🐣 Origin: {}".format(traits.get('Origin').replace('_', ' ').title()) if traits.get('Origin') else ""
         shape = "\n✨ Shape: {}".format(traits.get('Shape')) if traits.get('Shape') else ""
-        infos = "{gen}\n💯 RS {rs}{origin}{shape}".format(
-            rs=rs, gen=gen, origin=origin, shape=shape)
+        infos = "{gen}{rs}{origin}{shape}".format(rs=rs, gen=gen, origin=origin, shape=shape)
 
         # todo: maybe add filtering to avoid mentions/url/hashtag injections
         name = s['asset']['name']
