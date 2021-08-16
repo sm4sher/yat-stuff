@@ -66,7 +66,7 @@ class OpenseaFeeder:
         if not s.get('asset') and s.get('asset_bundle'):
             bundlename = s['asset_bundle'].get('name', "")
             bundlename = twitter_sanitize(bundlename, max_length=130)
-            return template['txt'].format(
+            return template.format(
                 oslink=s['asset_bundle']['permalink'],
                 bundlename=bundlename,
                 bundlesize=len(s['asset_bundle']['assets']),
@@ -90,7 +90,7 @@ class OpenseaFeeder:
 
         name = s['asset'].get('name', emoji_id)
         name = twitter_sanitize(name, max_length=130)
-        return template['txt'].format(
+        return template.format(
             oslink=s['asset']['permalink'],
             yatlink=s['asset']['external_link'],
             imglink=s['asset']['image_original_url'],
