@@ -28,7 +28,10 @@ class OpenseaFeeder:
 
         self.yat_api = YatAPI()
         self.twitter = TwitterBot(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_SECRET)
-        self.twipeater = TwitterBot(config.TWIPEATER_ACCESS_TOKEN, config.TWIPEATER_ACCESS_SECRET)
+        if config.TWIPEATER_ENABLE:
+            self.twipeater = TwitterBot(config.TWIPEATER_ACCESS_TOKEN, config.TWIPEATER_ACCESS_SECRET)
+        else:
+            self.twipeater = None
         self.discord = discord
 
     def start(self):
