@@ -6,12 +6,13 @@ from datetime import datetime, timezone, timedelta
 
 import discord
 
-from yat_api import get_recent_purchases
+from yat_api import YatAPI
 
 class YatFeeder:
     def __init__(self, bot):
         self.bot = bot
         self.db = sqlite3.connect('feed.db')
+        self.yat_api = YatAPI()
         self.init_db()
         self.load_config()
 
@@ -116,7 +117,7 @@ class YatFeeder:
     async def task_feeder(self):
         await self.check_annoucements()
         # get list of recently purchased yats
-        recent = get_recent_purchases()
+        recent = await self.yat_api.get_recent_purchases()
         if not recent:
             logging.warning("Couldn't get list of recent yat purchases")
             return
@@ -129,6 +130,13 @@ class YatFeeder:
         # send msgs in each livefeed
         msg = "\n".join(["{} (RS{})".format(y.get('emoji_id'), y.get('rhythm_score')) for y in new])
         await self.send(msg)
+
+    @task_feeder.after_loop
+    async def on_task_feeder_cancel(self):
+        self.db.commit()
+        self.db.close()
+        await self.yat_api.close()
+        logging.info("Stopped YatFeeder task")
 
     def get_recent_yats(self, limit=10):
         cur = self.db_exec("SELECT yat, rs FROM purch_yats ORDER BY date DESC LIMIT ?", (limit,))

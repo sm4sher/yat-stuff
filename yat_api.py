@@ -124,6 +124,15 @@ class YatAPI:
             resp_json = await r.json()
             return resp_json.get('result')
 
+    async def get_recent_purchases(self):
+        s = await self.get_aiosession()
+        path = self.API_URL + '/emoji_id/recent'
+        async with s.get(path) as r:
+            if r.status != 200:
+                return False
+            resp_json = await r.json()
+            return resp_json.get('result')
+
     # consider making a helper parent class for this and OpenseaFeeder
     async def get_aiosession(self):
         if self.aiosession is not None:
