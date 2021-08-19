@@ -23,8 +23,10 @@ def check_id(seq):
 
 def get_yats_from_pattern(pattern):
     logging.info("performing a search for pattern {}".format(pattern))
-    if len(split_yat(pattern)) > 10:
-        raise PatternException("Your pattern is too long")
+    if len(set(regex.findall('[A-Z]', pattern))) > 5:
+        raise PatternException("Error: you can't use more than 5 variables")
+    if len(split_yat(pattern)) > 100:
+        raise PatternException("Error: your pattern can't be longer than 100 chars")
     q = set()
     ids = set()
     parse_pattern(pattern, q, ids)
@@ -38,6 +40,7 @@ def get_yats_from_pattern(pattern):
 # v2: simpler, betterer
 # A, B, C, D, E = any emoji, same letter = same emoji
 # Af -> only faces, Ao -> objects, Afo -> face & objects ....
+# A[😎🤔] -> only 😎 or 🤔
 
 FACE_EMOJIS = ['😂', '😇', '🙃', '😍', '😜', '😘', '🤓', '😎', '😢', '🤯', '😱', '🤔', '😶', '😵', '🤐', '🤢', '🤧', '😷', '🤕', '🤑', '🤠', '😈', '🤡', '💩', '👻', '☠️', '👽', '👾', '🤖', '🎃', '👶', '🐶', '🐱', '🐭', '🐰', '🦊', '🐻', '🐼', '🐮', '🐨', '🐯', '🦁', '🐷', '🐸', '🐵', '🙈', '🐔', '🐧', '🐣', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🥺', '😏']
 HUMAN_EMOJIS = []
@@ -58,13 +61,13 @@ def get_emojis(mods=None):
         elif m == 'b': # bookends
             s.update(BOOKEND_EMOJIS)
         else:
-            raise PatternException("Unrecognized modifier: '{}'".format(m))
+            raise PatternException("Error: unrecognized modifier '{}'".format(m))
     return s
 
 def parse_pattern(pattern, q, ids):
     logging.debug("parsing pattern" + pattern)
-    # split pattern in chars
-    pattern = split_yat(pattern)
+    # remove spaces and split pattern in chars
+    pattern = split_yat(pattern.replace(' ', ''))
     # check if we have a valid yat
     if check_id(pattern):
         ids.add(''.join(pattern))
@@ -74,21 +77,35 @@ def parse_pattern(pattern, q, ids):
     i = 0
     while i < len(pattern):
         logging.debug("queue: {}, queue complexity: {}, valid ids: {}".format(len(q), q_complexity, len(ids)))
-        if len(q) > 5000 or len(ids) > 5000 or q_complexity > 50:
+        if len(q) > 5000 or len(ids) > 5000 or q_complexity > 500:
             raise PatternException("Sorry, your pattern is too complex. Please change your pattern and try again")
         c = pattern[i]
         if c in string.ascii_uppercase:
             logging.debug("found var {}".format(c))
-            mods = []
-            for j in range(i+1, len(pattern)):
-                if pattern[j] in string.ascii_lowercase:
-                    mods.append(pattern[j])
-                else:
-                    break
-            logging.debug("  mods: {}".format(mods))
+            if i < len(pattern)-1 and pattern[i+1] == "[":
+                logging.debug("parsing brackets")
+                # find index of closing bracket
+                try:
+                    end_idx = pattern.index("]")
+                except ValueError:
+                    raise PatternException("Error: unclosed brackets")
+                # extract emojis inside brackets
+                sub_emojis = set(pattern[i+2:end_idx])
+                if not sub_emojis.issubset(emojis):
+                    raise PatternException("Error: non-emoji character inside brackets")
+                # remake the split pattern without the brackets following any occurence of the var
+                pattern = split_yat(regex.sub(r"{}\[.*?\]".format(c), c, ''.join(pattern)))
+            else:
+                mods = []
+                for j in range(i+1, len(pattern)):
+                    if pattern[j] in string.ascii_lowercase:
+                        mods.append(pattern[j])
+                    else:
+                        break
+                logging.debug("  mods: {}".format(mods))
+                sub_emojis = get_emojis(mods)
             # replace all occurence of the variable (and it's mods if any) with "[REP]"
             pattern_rep = regex.sub(r"{}[a-z]*".format(c), "[REP]", ''.join(pattern))
-            sub_emojis = get_emojis(mods)
             # add new patterns with substituted vars to the queue
             q.update([pattern_rep.replace("[REP]", e) for e in sub_emojis])
             # remake the split pattern without the var we just handled
@@ -97,8 +114,10 @@ def parse_pattern(pattern, q, ids):
             # avoid getting in too deep by determining the complexity added to the queue
             # i'm too tired to do it properly, should be enough to prevent at least accidental dos
             q_complexity += len(sub_emojis) * len(set(regex.findall('[A-Z]', pattern_rep)))
+        elif c == ']':
+            raise PatternException("Error: unmatched closing bracket")
         elif c not in emojis and c != '_':
-            raise PatternException("Unrecognized character or emoji: '{}'".format(c))
+            raise PatternException("Error: unrecognized character or emoji '{}'".format(c))
         i += 1
         
 async def scan(ids):
