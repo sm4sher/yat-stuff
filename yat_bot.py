@@ -1,10 +1,10 @@
 from discord.ext.commands import Bot, guild_only
-from discord.ext.commands.errors import MissingRequiredArgument, BadArgument, CommandError, MissingPermissions, CommandNotFound
+from discord.ext.commands.errors import MissingRequiredArgument, BadArgument, UserInputError, MissingPermissions, CommandNotFound, CommandInvokeError
 from discord import File, Game, TextChannel, Member, Intents
 from datetime import datetime
 
 from yat_image import parse_string, check_seq, make_img
-from yat_pattern import get_yats_from_pattern, scan
+from yat_pattern import get_yats_from_pattern, scan, PatternException
 from yat_api import paste
 from yat_scanner import YatScanner
 from yat_feeder import YatFeeder
@@ -18,9 +18,6 @@ if config.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s: %(message)s", filename="yat_bot.log", level=logging.INFO)
-
-class CommandException(Exception):
-    pass
 
 class YatBot(Bot):
     feed_started = False
@@ -65,12 +62,7 @@ async def view(ctx, *, arg):
     if not res:
         await ctx.reply(msg)
         return
-    try:
-        img = make_img(emo_seq)
-    except:
-        logging.exception("Error while creating yat image")
-        await ctx.reply("Sorry there was an error...")
-        return
+    img = make_img(emo_seq)
     await ctx.reply(file=File(img, filename="beautifulyat.png"))
 
 @view.error
@@ -88,28 +80,25 @@ async def pattern(ctx, *, pattern):
     if ctx.author.id not in config.PATTERN_COMMAND_AUTHORIZED:
         await ctx.reply("Sorry you don't have the permission to use this command. Send a DM to sm4sher#0967 if you're interested!")
         return
-    try:
-        yats = get_yats_from_pattern(pattern)
-        if len(yats) > 20:
-            await ctx.reply("Checking {} Yats, this can take some time!".format(len(yats)))
-        res = await scan(yats)
-    except:
-        logging.exception("Error while performing pattern search")
-        await ctx.reply("Sorry there was an error...")
-        return
-    if len(res) > 1000:
+    yats = get_yats_from_pattern(pattern)
+    # todo: implement rate limit (5k scans per user per week?) and confirmation dialog
+    await ctx.reply("Your pattern matched {} yats. You have XXX scans remaining. React to confirm (TODO)".format(len(yats)))
+    res = await scan(yats)
+    if len(res) > 500:
         link = paste(res)
         msg = "Your pattern search is done! Results were too long for discord, you can view them here {}".format(link)
     else:
-        msg = res
+        msg = res.replace("\t", "  -  ") # discord doesn't like tabs
     await ctx.reply(msg)
 
 @pattern.error
 async def pattern_error(ctx, error):
-    logging.warning('Error in pattern command:' + str(error))
     if isinstance(error, MissingRequiredArgument):
         await ctx.reply("You didn't provide a pattern to search")
+    elif isinstance(error, CommandInvokeError) and isinstance(error.original, PatternException):
+        await ctx.reply(str(error.original))
     else:
+        logging.warning('Error in pattern command:' + str(error))
         await ctx.reply("Sorry there was an error....")
 
 @bot.command(hidden=True)
@@ -159,7 +148,7 @@ async def livefeed(ctx, switch: bool, channel: TextChannel):
 
 @livefeed.error
 async def livefeed_error(ctx, error):
-    if isinstance(error, CommandError):
+    if isinstance(error, UserInputError):
         await ctx.reply(str(error))
     else:
         logging.exception('Error in livefeed command', error)

@@ -126,6 +126,7 @@ class YatAPI:
             return resp_json.get('result')
 
     async def get_infos_bulk(self, emoji_ids):
+        emoji_ids = tuple(emoji_ids) # support receiving sets
         tasks = (self.get_infos(emoji_id) for emoji_id in emoji_ids)
         res = await asyncio.gather(*tasks, return_exceptions=True)
         ret = []
