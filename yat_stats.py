@@ -54,9 +54,9 @@ def print_top_by_rs(yats, n=10):
     for i, yat in enumerate(top):
         print('{}: {} (RS{})'.format(i+1, yat['emoji_id'], yat['rs']))
 
-def time_chart(yats, hourly=False):
-    start = datetime(year=2021, month=6, day=1)
-    end = datetime(year=2021, month=6, day=30, hour=23)
+def time_chart(yats, start, end, hourly=False):
+    start = datetime(year=start.year, month=start.month, day=start.day)
+    end = datetime(year=end.year, month=end.month, day=end.day, hour=23)
     x = []
     while start <= end:
         x.append(start)
@@ -78,10 +78,49 @@ def time_chart(yats, hourly=False):
     fig.suptitle("Number of Yats bought per {}".format('hour' if hourly else 'day'))
     plt.show()
 
+def top_bookends(yats):
+    emojis = []
+    for y in yats:
+        split = split_yat(y['emoji_id'])
+        if split[0]==split[-1]:
+            emojis.append(split[0])
+    print_top(emojis, n=20)
 
-if __name__ == "__main__":
-    start = date(2020, 6, 1)
-    end = date(2022, 6, 30)
+def top_double_bookends(yats, exclude_same=False):
+    emojis = []
+    for y in yats:
+        split = split_yat(y['emoji_id'])
+        if len(split) != 5: continue
+        if split[0]==split[-1] and split[1]==split[-2] and (not exclude_same or split[0]!=split[1]):
+            emojis.append(''.join(split[0:2]))
+    print_top(emojis, n=20)
+
+def top_bookended(yats):
+    emojis = []
+    for y in yats:
+        split = split_yat(y['emoji_id'])
+        if len(split)==3 and split[0]==split[-1]:
+            emojis.append(split[1])
+        if len(split)==5 and split[0]==split[-1] and split[1]==split[-2]:
+            emojis.append(split[2])
+    print_top(emojis, n=20)
+
+def top_adoptable_emojis(yats):
+    emojis = []
+    for y in yats:
+        adopt_score = 0
+        if '👖' in y['emoji_id']: adopt_score+=1
+        if '👟' in y['emoji_id']: adopt_score+=1
+        if '👕' in y['emoji_id']: adopt_score+=1
+        if '👞' in y['emoji_id']: adopt_score+=1
+        if adopt_score < 2:
+            continue
+        emojis += split_yat(y['emoji_id'])
+    print_top(emojis)
+
+def gen_stats():
+    start = date(2021, 5, 12)
+    end = date(2021, 8, 31)
     yats = load_yats(start, end)
     total_cnt = len(yats)
     cnt_3 = get_count_by_length(yats, 3)
@@ -97,8 +136,14 @@ if __name__ == "__main__":
     print_top(emojis)
     print("\n**==== RS Leaderboard ====**\n")
     print_top_by_rs(yats)
+    create_rs_chart(yats)
+    time_chart(yats, start, end)
 
-
-    export_csv(yats)
-    #create_rs_chart(yats)
-    #time_chart(yats, hourly=False)
+if __name__ == "__main__":
+    #gen_stats()
+    #export_csv(yats)
+    #exit()
+    start = date(2020, 5, 1)
+    end = date(2022, 8, 30)
+    yats = load_yats(start, end)
+    top_bookended(yats)
