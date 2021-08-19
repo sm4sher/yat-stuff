@@ -1,5 +1,6 @@
 import requests
 import aiohttp
+import asyncio
 from multiprocessing import Pool
 import config
 
@@ -123,6 +124,17 @@ class YatAPI:
                 return False
             resp_json = await r.json()
             return resp_json.get('result')
+
+    async def get_infos_bulk(self, emoji_ids):
+        tasks = (self.get_infos(emoji_id) for emoji_id in emoji_ids)
+        res = await asyncio.gather(*tasks, return_exceptions=True)
+        ret = []
+        for i, infos in enumerate(res):
+            if not infos or isinstance(infos, Exception):
+                ret.append({'emoji_id': emoji_ids[i], 'result': False})
+            else:
+                ret.append({'emoji_id': emoji_ids[i], 'result': infos})
+        return ret
 
     async def get_recent_purchases(self):
         s = await self.get_aiosession()

@@ -1,8 +1,10 @@
-from yat_api import get_emoji_list, get_infos, fast_get_infos
+from yat_api import get_emoji_list, YatAPI
 
 import regex
 from itertools import product
 import logging
+import asyncio
+import sys
 
 emojis = get_emoji_list()    
 
@@ -87,18 +89,19 @@ def parse_pattern(pattern, q, ids):
     if ready and check_id(pattern):
         ids.append(''.join(pattern))
         
-def scan(ids):
+async def scan(ids):
     logging.info("checking availability of {} yats".format(len(ids)))
     avails = []
-    res_all = fast_get_infos(ids)
+    yat_api = YatAPI()
+    res_all = await yat_api.get_infos_bulk(ids)
     for i, res in enumerate(res_all):
-        #print(i+1, '/', len(ids), sep='')
-        if res.get('res'):
-            infos = res.get('res')
-        else:
-            infos = get_infos(res.get('id'))
+        infos = res.get('result')
+        # if we didn't get the infos for an emoji_id try again once
         if not infos:
-            logging.info('pattern scan: Skipping ' + res.get('id'))
+            infos = await yat_api.get_infos(res.get('emoji_id'))
+        # if we still don't have it, skip
+        if not infos:
+            logging.info('pattern scan: Skipping ' + res.get('emoji_id'))
             continue
         avail = infos.get('availability')
         if avail != 'Taken':
@@ -109,6 +112,7 @@ def scan(ids):
                 'price': infos.get('price', 0)/100,
                 'disc_price': infos.get('discounted_price', 0)/100,
             })
+    await yat_api.close()
     return format_results(avails)
             
 def format_results(res):
@@ -122,10 +126,10 @@ def format_results(res):
     return s
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) < 2:
         pattern = '🔥.🔥'
     else:
         pattern = sys.argv[1]
     yats = get_yats_from_pattern(pattern)
-    print(scan(yats))
+    result = asyncio.run(scan(yats))
+    print(result)

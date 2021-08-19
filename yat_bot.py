@@ -92,7 +92,7 @@ async def pattern(ctx, *, pattern):
         yats = get_yats_from_pattern(pattern)
         if len(yats) > 20:
             await ctx.reply("Checking {} Yats, this can take some time!".format(len(yats)))
-        res = await bot.loop.run_in_executor(None, scan, yats)
+        res = await scan(yats)
     except:
         logging.exception("Error while performing pattern search")
         await ctx.reply("Sorry there was an error...")
