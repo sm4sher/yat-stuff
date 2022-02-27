@@ -171,7 +171,7 @@ class OpenseaFeeder:
             "limit": 25,
             #"offset": 0
         }
-        async with s.get(url, params=params) as r:
+        async with s.get(url, params=params, headers={'X-API-KEY': config.OPENSEA_API_KEY}) as r:
             if r.status != 200:
                 return False
             json_resp = await r.json()
