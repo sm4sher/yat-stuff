@@ -118,7 +118,7 @@ class YatFeeder:
         await self.check_annoucements()
         # get list of recently purchased yats
         recent = await self.yat_api.get_recent_purchases()
-        if not recent:
+        if recent == False:
             logging.warning("Couldn't get list of recent yat purchases")
             return
         # filter out those we already processed
