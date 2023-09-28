@@ -16,7 +16,7 @@ class TwitterBot:
         try:
             status = await loop.run_in_executor(None, self.client.create_tweet, text=txt)
             logging.info(f"posted tweet {status.data['id']}")
-        except tweepy.error.TweepError:
+        except tweepy.TweepyException:
             logging.exception(f"Error while posting tweet '{txt}':")
 
 # Twitter only let us generate access tokens for the dev twitter account...
