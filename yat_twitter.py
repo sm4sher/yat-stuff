@@ -7,18 +7,17 @@ import config
 
 class TwitterBot:
     def __init__(self, access_token, access_secret):
-        auth = tweepy.OAuthHandler(config.TWITTER_CONSUMER_KEY, config.TWITTER_CONSUMER_SECRET)
-        auth.set_access_token(access_token, access_secret)
-        self.api = tweepy.API(auth, wait_on_rate_limit=True)
+        self.client = tweepy.Client(consumer_key=config.TWITTER_CONSUMER_KEY, consumer_secret=config.TWITTER_CONSUMER_SECRET,
+            access_token=access_token, access_token_secret=access_secret)
 
     async def send_tweet(self, txt):
         #use run_in_executor to avoid blocking the rest of the code
         loop = asyncio.get_event_loop()
         try:
-            status = await loop.run_in_executor(None, self.api.update_status, txt)
-            logging.info("posted tweet {}".format(status.id))
+            status = await loop.run_in_executor(None, self.client.create_tweet, text=txt)
+            logging.info(f"posted tweet {status.data['id']}")
         except tweepy.error.TweepError:
-            logging.exception("Error while posting tweet '{}':".format(txt))
+            logging.exception(f"Error while posting tweet '{txt}':")
 
 # Twitter only let us generate access tokens for the dev twitter account...
 def user_login():

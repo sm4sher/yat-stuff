@@ -1,7 +1,8 @@
-discord.py
+# discord.py v2 has breaking changes, TODO later
+discord.py ~= 1.7
 requests
 Pillow
 matplotlib
 regex
 aiohttp[speedups]
-tweepy
+tweepy >= 4.14
